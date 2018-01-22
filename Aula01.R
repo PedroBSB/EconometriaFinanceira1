@@ -33,17 +33,26 @@ dados.ret<- MSFT.ret %>%
 #Modelo de um fator
 mod1<-lm(MSFT~1+SP500, data = dados.ret)
 print(summary(mod1),digits=8)
+alpha.MSFT<-coef(mod1)[1]
+beta.MSFT<-coef(mod1)[2]
 
 #Uma vez que alpha=-0.00029 caso o coeficiente fosse significante, poderíamos afirmar que em média a uma subperformance anual de
 # -0.00029*12*100 = -0.348%. Possui um risco sistemático alto uma vez que beta= 1.2470, o qual 
 #é maior do que 1. O risco específico expresso em volatilidade anual é
 #0.01659789*sqrt(360)*100=31.49%
 
-
 mod2<-lm(NWL~1+SP500, data = dados.ret)
 print(summary(mod2),digits=8)
+alpha.NWL<-coef(mod2)[1]
+beta.NWL<-coef(mod2)[2]
 
 #Uma vez que alpha=0.00009 caso o coeficiente fosse significante, poderíamos afirmar que em média a uma sobreperformance anual de
 # 0.00009*12*100 = 0.108%. Possui um risco sistemático baixo uma vez que beta= 0.6339, o qual 
 #é muito menor do que 1. O risco específico expresso em volatilidade anual é
 #0.01700293*sqrt(360)*100=32.26%
+
+
+#Para o portfolio temos:
+alpha<- 0.7*alpha.NWL+0.3*alpha.MSFT
+beta<- 0.7*beta.NWL+0.3*beta.MSFT
+risco<- sqrt((0.7^2)*(0.01700293*sqrt(360))^2+(0.3^2)*(0.01659789*sqrt(360)*100)^2)
