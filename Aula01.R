@@ -1,58 +1,29 @@
-#Exemplo 1.2
-library(quantmod)
-library(dplyr)
+rm(list=ls())
+#Exemplo 1.1
+library(tibbletime)
+library(tidyverse)
 
-##### Faz o download dos dados
-#Microsoft
-MSFT<-as.data.frame(getSymbols("MSFT", from="2000-01-03",to="2007-08-27", auto.assign=F))
-MSFT$Time<-rownames(MSFT)
-#National Western Life Insurance Company (NWL)
-NWL<-as.data.frame(getSymbols("NWL", from="2000-01-03",to="2007-08-27", auto.assign=F))
-NWL$Time<-rownames(NWL)
-#SP500
-SP500<-as.data.frame(getSymbols("^GSPC", from="2000-01-03",to="2007-08-27", auto.assign=F))
-SP500$Time<-rownames(SP500)
+#Lê os dados
+vinhos.tbl<-readr::read_delim("Data/Vinho.txt",delim=" ", col_names = FALSE)
+glimpse(vinhos.df) 
 
-##### Calcula o retorno diário
-MSFT.ret <- MSFT %>%
-  mutate(MSFT = c(NA,diff(log(MSFT.Adjusted)))) %>%
-  select(Time, MSFT)
-NWL.ret <- NWL %>%
-  mutate(NWL = c(NA,diff(log(NWL.Adjusted)))) %>% 
-  select(Time, NWL)
-SP500.ret <- SP500 %>%
-  mutate(SP500 = c(NA,diff(log(GSPC.Adjusted)))) %>% 
-  select(Time, SP500)
+#Renomeia as variáveis
+vinhos.tbl <- vinhos.tbl %>%  
+                rename(Ano = X1,
+                       Mes = X2,
+                       Kilolitros = X3)
+#Cria a data
+vinhos.tbl <- vinhos.tbl %>% 
+              mutate(Data = as.Date(paste0("01-",Mes,"-",Ano) , format = "%d-%m-%Y"))
 
-##### Junta os dados
-dados.ret<- MSFT.ret %>% 
-            full_join(NWL.ret, by="Time") %>% 
-            full_join(SP500.ret, by="Time")
+#Transforma o objeto em uma série temporal
+serie <- as_tbl_time(vinhos.tbl, index = Data) 
+
+vinhos.tbl %>% ggplot(aes(x=Data,y=Kilolitros)) +
+               geom_line(color="royalblue")+
+               labs(x="Data",y="Kilolitros",title="Venda de vinhos em Kilolitros",
+               caption="Fonte: Brockwell e Davis (2002)")+
+               theme(plot.caption=element_text(hjust=0),
+               plot.title=element_text(face="bold",size=18))
 
 
-#Modelo de um fator
-mod1<-lm(MSFT~1+SP500, data = dados.ret)
-print(summary(mod1),digits=8)
-alpha.MSFT<-coef(mod1)[1]
-beta.MSFT<-coef(mod1)[2]
-
-#Uma vez que alpha=-0.00029 caso o coeficiente fosse significante, poderíamos afirmar que em média a uma subperformance anual de
-# -0.00029*12*100 = -0.348%. Possui um risco sistemático alto uma vez que beta= 1.2470, o qual 
-#é maior do que 1. O risco específico expresso em volatilidade anual é
-#0.01659789*sqrt(360)*100=31.49%
-
-mod2<-lm(NWL~1+SP500, data = dados.ret)
-print(summary(mod2),digits=8)
-alpha.NWL<-coef(mod2)[1]
-beta.NWL<-coef(mod2)[2]
-
-#Uma vez que alpha=0.00009 caso o coeficiente fosse significante, poderíamos afirmar que em média a uma sobreperformance anual de
-# 0.00009*12*100 = 0.108%. Possui um risco sistemático baixo uma vez que beta= 0.6339, o qual 
-#é muito menor do que 1. O risco específico expresso em volatilidade anual é
-#0.01700293*sqrt(360)*100=32.26%
-
-
-#Para o portfolio temos:
-alpha<- 0.7*alpha.NWL+0.3*alpha.MSFT
-beta<- 0.7*beta.NWL+0.3*beta.MSFT
-risco<- sqrt((0.7^2)*(0.01700293*sqrt(360))^2+(0.3^2)*(0.01659789*sqrt(360)*100)^2)
