@@ -71,3 +71,22 @@ plot(WN)
 RW.ts <- ts(RW$S, frequency=12)
 RW <- decompose(RW.ts, type = "additive")
 plot(RW)
+
+
+################################################################################################
+#################################   Exemplo 1.10    ############################################
+################################################################################################
+
+#Vinho
+acf(vinhosComp.ts, lag.max = 10, type = "covariance")
+acf(vinhosComp.ts, lag.max = 10, type = "correlation")
+
+#White Noise
+acf(WN.ts, lag.max = 10, type = "covariance")
+acf(WN.ts, lag.max = 10, type = "correlation")
+
+#Random Walk
+acf(RW.ts, lag.max = 10, type = "covariance")
+acf(RW.ts, lag.max = 10, type = "correlation")
+
+
