@@ -71,3 +71,20 @@ a<-solve(Gamma0,gamma.h)
 #Forecast
 prev<- mu+(t(serie.train)-mu)%*%a
 prev
+
+#Forecast usando as funções
+ts.plot(serie.train)
+fit<- arima(serie.train,order=c(1,0,0))
+AR_forecast <- predict(fit, n.ahead = 1)$pred
+AR_forecast_se <- predict(fit, n.ahead = 1)$se
+
+
+################################################################################################
+#################################   Exemplo 2.8    #############################################
+################################################################################################
+library(forecastSNSTS)
+
+#Coeficientes preditos
+phi<-predCoef(serie.train,1,50,950,0)
+phi.vec<-as.numeric(phi$coef)
+forecast<-t(phi.vec)%*%serie.train[901:950]
