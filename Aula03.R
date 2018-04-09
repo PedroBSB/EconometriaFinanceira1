@@ -320,7 +320,6 @@ dwtest(fit1)
 df.fin<-na.omit(df.fin)
 fit2<-gmm(rm ~ rf2, ~rf2, data=df.fin, kernel="Bartlett", bw=bwNeweyWest)
 summary(fit2)
-dwtest(fit2)
 
 #Modelo 2
 g <- function(theta, x) {
