@@ -123,9 +123,12 @@ plot(seq(2,8),c(aic2,aic3,aic4,aic5,aic6,aic7,aic8),type="l")
 library(sas7bdat)
 dados<-read.sas7bdat("Data\\sgunemployment.sas7bdat")
 plot(dados$PercentUnemployed,type="l")
-
+serie2<-diff(dados$PercentUnemployed)
 #Testando Estacionariedade
-tseries::adf.test(dados$PercentUnemployed, alternative="stationary")
+tseries::adf.test(serie2, alternative="stationary")
+
+
+
 
 #Buscando a parametrização
 auto.arima(dados$PercentUnemployed, stepwise=FALSE)
@@ -133,7 +136,7 @@ auto.arima(dados$PercentUnemployed, stepwise=FALSE)
 #Comparando modelos
 fit1<-arima(dados$PercentUnemployed,order = c(1, 0, 0))
 accuracy(fit1)
-fit2<-arima(dados$PercentUnemployed,order = c(1, 0, 1))
+fit2<-arima(serie2,order = c(1, 0, 1))
 accuracy(fit2)
 
 #Resultado do modelo
@@ -150,9 +153,9 @@ dados$LI<-dados$serie2-2*dados$SE
 dados$LS<-dados$serie2+2*dados$SE
 dados$Time<-seq(1,nrow(dados))
 ggplot() + 
-  geom_line(data = dados[950:1020,], aes(x = Time, y = serie2), color = "red") +
-  geom_line(data = dados[950:1020,], aes(x = Time, y = LI), color = "blue") +
-  geom_line(data = dados[950:1020,], aes(x = Time, y = LS), color = "blue") +
+  geom_line(data = dados, aes(x = Time, y = serie2), color = "red") +
+  geom_line(data = dados, aes(x = Time, y = LI), color = "blue") +
+  geom_line(data = dados, aes(x = Time, y = LS), color = "blue") +
   xlab('Data') +
   ylab('PercentUnemployed')
 
@@ -194,14 +197,17 @@ vinhosComp <- decompose(vinhosComp.ts, type = "additive")
 tseries::adf.test(na.omit(vinhosComp$random), alternative="stationary")
 
 #Buscando a parametrização
-auto.arima(na.omit(vinhosComp$random), stepwise=FALSE)
+auto.arima(serie$Kilolitros, stepwise=FALSE)
 
 #Comparando modelos
-fit1<-arima(na.omit(vinhosComp$random), order = c(4, 0, 0), seasonal = c(1,0,0))
+fit1<-arima(serie$Kilolitros, 
+            order = c(1, 1, 1), seasonal = c(0,0,0))
 accuracy(fit1)
 
 #Previsão:
 yfor<-predict(fit1,n.ahead = 20)
+
+plot(c(serie$Kilolitros,yfor$pred),type="l")
 
 
 ################################################################################################
@@ -272,7 +278,8 @@ tseries::adf.test(na.omit(noise1), alternative="stationary")
 auto.arima(na.omit(noise1), stepwise=FALSE)
 
 #Comparando modelos
-fit3<-arima(na.omit(noise1), order = c(3, 0, 2),  include.mean = TRUE)
+fit3<-arima(na.omit(noise1), order = c(3, 0, 2), 
+            include.mean = TRUE)
 coeftest(fit3)
 
 #Previsão (Ruído):
@@ -282,7 +289,7 @@ serie.noise<-c(noise1,serie.noise)
 
 #Previsão (Sazonalidade)
 t<-seq(1,length(y)+20)
-sazo.x<-data.frame(sin(2*pi/per*t)+cos(2*pi/per*t))
+sazo.x<-as.data.frame(cbind(sin(2*pi/per*t),cos(2*pi/per*t)))
 sazo.pred <-predict(reslm,newdata=sazo.x)
 
 #Previsão (Tendência)''
@@ -302,7 +309,8 @@ lines(as.numeric(timeserie_beer))
 
 library(gmm)
 data(Finance) #help(Finance)
-df.fin <- data.frame(rm=Finance[1:500,"rm"], rf=Finance[1:500,"rf"])
+df.fin <- data.frame(rm=Finance[1:500,"rm"],
+                     rf=Finance[1:500,"rf"])
 
 #Estacionariedade
 tseries::adf.test(df.fin[,1], alternative="stationary")
@@ -311,6 +319,7 @@ df.fin$rf2<-c(NA,diff(df.fin$rf))
 tseries::adf.test(na.omit(df.fin[,3]), alternative="stationary")
 
 #Modelo 1 (rejeita a hipótese nula de subreidentificabilidade):
+df.fin<-na.omit(df.fin)
 fit1 <- gmm(rm ~ rf2, ~rf2, data=df.fin)
 summary(fit1)
 
@@ -318,7 +327,8 @@ summary(fit1)
 dwtest(fit1)
 
 df.fin<-na.omit(df.fin)
-fit2<-gmm(rm ~ rf2, ~rf2, data=df.fin, kernel="Bartlett", bw=bwNeweyWest)
+fit2<-gmm(rm ~ rf2, ~rf2, data=df.fin, 
+          kernel="Bartlett", bw=bwNeweyWest)
 summary(fit2)
 
 #Modelo 2
@@ -328,7 +338,9 @@ g <- function(theta, x) {
   f <- cbind(m.1, m.z)
   return(f)
 }
-fit3<-gmm(g, df.fin, t0=c(0,0), method = "BFGS", control=list(fnscale=1e-8))
+fit3<-gmm(g, df.fin, t0=c(0,0), 
+          method = "BFGS",
+          control=list(fnscale=1e-8))
 summary(fit3)
 
 
